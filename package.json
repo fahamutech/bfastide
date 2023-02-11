@@ -1,0 +1,12 @@
+{
+  "name": "functions",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "echo \"no test\""
+  },
+  "dependencies": {
+    "bfast": "latest"
+  },
+  "devDependencies": {},
+  "private": true
+}
