@@ -4,9 +4,10 @@
   "scripts": {
     "test": "echo \"no test\""
   },
-  "dependencies": {
-    "bfast": "latest"
+  "dependencies": {},
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0"
   },
-  "devDependencies": {},
   "private": true
 }
