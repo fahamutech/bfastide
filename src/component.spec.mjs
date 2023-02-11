@@ -1,4 +1,9 @@
-import {readComponentBody, readComponentDependencies, readComponentDescription} from "./components.mjs";
+import {
+    readComponentBody,
+    readComponentDependencies,
+    readComponentDescription,
+    readComponentProps
+} from "./components.mjs";
 import {expect} from "chai";
 
 const compactString = x => `${x}`.replace(/\s*/gm, '');
@@ -7,7 +12,7 @@ describe('ComponentFunctions', function () {
     describe('readComponentBody', function () {
         it('should return a component body', function () {
             const componentContent = x => `
-            export const customText = props => {
+            export function customText(props){
                 return (
                    ${x}
                 )
@@ -32,7 +37,7 @@ describe('ComponentFunctions', function () {
         });
         it('should return empty body', function () {
             const emptyComponentContent = x => `
-            export const customText = props => {
+            export function customText({props}){
                 return ${x}
                 ff
             }`;
@@ -97,6 +102,17 @@ describe('ComponentFunctions', function () {
                 {name: 'FlatList', reference: 'react-native'},
                 {name: 'Button', reference: 'react-native'},
             ]);
+        });
+    });
+    describe('readComponentProps', function () {
+        const componentContent = `
+            export function customText({name,style,onValue}){
+                return (
+                   <Text/>
+                )
+            }`;
+        it('should return a component props', function () {
+            expect(readComponentProps(componentContent)).eql(['name','style','onValue'])
         });
     });
 });
