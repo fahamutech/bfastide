@@ -34,7 +34,18 @@ const componentDependencyReducer = (acc, dependency) => {
             .replace(/^\s*(import)[\s\S]+?|(from)[\s\S]+?['"].+['";]+|[{}\s]+|(as)(?=\s+\S+)|\*/igm, '')
             .split(',')
             .filter(x => x !== '' && !!x)
-            .map(element => ({name: element, reference: ref}))
+            .map(element => {
+                const namedMatch = `${dependency}`.trim().match(/\s*\{[\s\S]*?\}/gm);
+                let type = 'default';
+                if (Array.isArray(namedMatch) && namedMatch.length > 0 && namedMatch[0].includes(element)) {
+                    type = 'named';
+                } else if (dependency.includes('*')) {
+                    type = 'all'
+                }
+                return {
+                    name: element, reference: ref, type
+                }
+            })
     );
 }
 export const readComponentDependencies = fileContent => {
@@ -51,7 +62,7 @@ export const readComponentProps = fileContent => {
             .trim()
             .split(',')
             .filter(x => x !== '' && !!x)
-            .map(x=>x.trim())
+            .map(x => x.trim())
         : [];
 }
 
@@ -105,7 +116,7 @@ export const readComponentEffects = fileContent => {
     return effects;
 }
 
-export const getComponentFromFileContent = (name,content) => ({
+export const getComponentFromFileContent = (name, content) => ({
     name,
     description: readComponentDescription(content),
     props: readComponentProps(content),

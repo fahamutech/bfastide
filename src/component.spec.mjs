@@ -99,17 +99,17 @@ describe('ComponentFunctions', function () {
             }`;
         it('should return component dependencies', function () {
             expect(readComponentDependencies(componentContent)).eql([
-                {name: 'React', reference: 'react'},
-                {name: 'useState', reference: 'react'},
-                {name: 'useEffect', reference: 'react'},
-                {name: 'Text', reference: '../custom-component'},
-                {name: 'bfast', reference: 'bfast'},
-                {name: 'moment', reference: 'momentjs'},
-                {name: 'ScrollView', reference: 'react-native'},
-                {name: 'Compose', reference: 'react-native'},
-                {name: 'FlatList', reference: 'react-native'},
-                {name: 'Button', reference: 'react-native'},
-                {name: 'OutlineButton', reference: 'file:my-path'},
+                {name: 'React', reference: 'react', type: 'default'},
+                {name: 'useState', reference: 'react', type: 'named'},
+                {name: 'useEffect', reference: 'react', type: 'named'},
+                {name: 'Text', reference: '../custom-component', type: 'default'},
+                {name: 'bfast', reference: 'bfast', type: 'all'},
+                {name: 'moment', reference: 'momentjs', type: 'all'},
+                {name: 'ScrollView', reference: 'react-native', type: 'named'},
+                {name: 'Compose', reference: 'react-native', type: 'named'},
+                {name: 'FlatList', reference: 'react-native', type: 'named'},
+                {name: 'Button', reference: 'react-native', type: 'named'},
+                {name: 'OutlineButton', reference: 'file:my-path', type: "named"},
             ]);
         });
     });
@@ -199,9 +199,122 @@ describe('ComponentFunctions', function () {
     });
     describe('getComponentFromFileContent', function () {
         it('should return a component presentation', async function () {
-            const content = await readFile2String(resolve(__dirname,'../','test','fullComp.mjs'));
-            const component = getComponentFromFileContent('TransferMoney',content);
-            console.log(component);
+            const content = await readFile2String(resolve(__dirname, '../', 'test', 'fullComp.mjs'));
+            const component = getComponentFromFileContent('TransferMoney', content);
+            expect({
+                ...component,
+                body: createHash('sha1')
+                    .update(component.body.replace(/\s*/gm, ''))
+                    .digest('hex'),
+                effects: component.effects.map(x => {
+                    delete x.body;
+                    return x;
+                })
+            }).deep.equal({
+                name: 'TransferMoney',
+                description: 'This is the description of the component',
+                states: [
+                    {
+                        state: 'account',
+                        setState: 'setAccount',
+                        initialValue: 'accounts[0]'
+                    },
+                    {
+                        state: 'fsp_obj',
+                        setState: 'setFspObj',
+                        initialValue: '{}'
+                    },
+                    {
+                        state: 'cashOutMethod',
+                        setState: 'setCashOutMethod',
+                        initialValue: ''
+                    },
+                    {
+                        state: 'cashOutMethods',
+                        setState: 'setCashOutMethods',
+                        initialValue: '[]'
+                    },
+                    {
+                        state: 'fetchingCashOutMethods',
+                        setState: 'setFetchingCashOutMethods',
+                        initialValue: 'false'
+                    },
+                    {
+                        state: 'errorDialog',
+                        setState: 'setErrorDialog',
+                        initialValue: '{state: false, actionRef: 1, message: \'\'}'
+                    },
+                ],
+                props: ['onDone', 'tabIndex', 'currentUser'],
+                dependencies: [
+                    {name: 'React', reference: 'react', type: 'default'},
+                    {name: 'useEffect', reference: 'react', type: 'named'},
+                    {name: 'useState', reference: 'react', type: 'named'},
+                    {name: 'FormInput', reference: '@components/FormInput/FormInput.component', type: 'default'},
+                    {name: 'useTranslation', reference: 'react-i18next', type: 'named'},
+                    {name: 'CheckIcon', reference: 'native-base', type: 'named'},
+                    {name: 'Select', reference: 'native-base', type: 'named'},
+                    {name: 'EvilIcons', reference: 'react-native-vector-icons/EvilIcons', type: 'default'},
+                    {name: 'compose', reference: '../../../../utils/functional', type: 'named'},
+                    {name: 'itOrEmptyList', reference: '../../../../utils/functional', type: 'named'},
+                    {name: 'propertyOr', reference: '../../../../utils/functional', type: 'named'},
+                    {name: 'propertyOrNull', reference: '../../../../utils/functional', type: 'named'},
+                ],
+                body: createHash('sha1').update(`<View style={{width: '100%', height: '100%', paddingHorizontal: 16}}>
+                    <View style={{height: '100%'}}>
+                        <ScrollView style={{width: '100%'}} showsVerticalScrollIndicator={false}>
+                            <Separator/>
+                            {country && <Separator/>}
+                            {cashOutMethod && country && <Separator/>}
+                            <Space height={100}/>
+                        </ScrollView>
+                        {
+                            !countries && <ProceedButton
+                                fsp={fsp}
+                                cashOutMethod={cashOutMethod}
+                                beneficialRef={beneficialRef}
+                                onSubmit={onSubmitStepOne}
+                            />
+                        }
+                    </View>
+                </View>`.replace(/\s*/mg, '')).digest('hex'),
+                effects: [
+                    {
+                        hash: createHash('sha1').update(` useEffect(() => {
+                            if (country) {
+                                fetchCashoutMethods()
+                            }
+                        }, []);`.replace(/\s*/gm, '')).digest('hex'),
+                        dependencies: []
+                    },
+                    {
+                        hash: createHash('sha1').update(`useEffect(() => {
+                            if (cashOutMethod) {
+                                fetchFinancialServices(1,[]);
+                            }
+                        }, [cashOutMethod,cashOutMethod,
+                            fetchingCashOutMethods]);`.replace(/\s*/gm, '')).digest('hex'),
+                        dependencies: ['cashOutMethod', 'cashOutMethod', 'fetchingCashOutMethods']
+                    },
+                    {
+                        hash: createHash('sha1').update(`useEffect(() => {
+                                if (tabIndex === 0 && currentUser) {
+                                    fetchCountries();
+                                }
+                            },
+                    
+                            [
+                    
+                                tabIndex
+                    
+                            ]
+                    
+                        );`.replace(/\s*/gm, '')).digest('hex'),
+                        dependencies: ['tabIndex']
+                    }
+                ]
+
+            })
         });
     });
 });
