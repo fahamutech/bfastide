@@ -1,4 +1,5 @@
 import {
+    getComponentFromFileContent,
     readComponentBody,
     readComponentDependencies,
     readComponentDescription, readComponentEffects,
@@ -6,7 +7,12 @@ import {
 } from "./components.mjs";
 import {expect} from "chai";
 import {createHash} from "node:crypto";
+import {readFile2String} from "./fsUtils.mjs";
+import {resolve} from "node:path";
+import {dirname} from "path";
+import {fileURLToPath} from "url";
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const compactString = x => `${x}`.replace(/\s*/gm, '');
 
 describe('ComponentFunctions', function () {
@@ -133,8 +139,8 @@ describe('ComponentFunctions', function () {
             }`;
             expect(readComponentStates(componentContent)).eql([
                 {state: 'name', setState: 'setName', initialValue: 'test'},
-                {state: 'pic', setState: 'setPic', initialValue: 7},
-                {state: 'url', setState: 'urlSet', initialValue: undefined},
+                {state: 'pic', setState: 'setPic', initialValue: '7'},
+                {state: 'url', setState: 'urlSet', initialValue: ''},
             ])
         });
     });
@@ -189,6 +195,13 @@ describe('ComponentFunctions', function () {
                     dependencies: ['age']
                 },
             ])
+        });
+    });
+    describe('getComponentFromFileContent', function () {
+        it('should return a component presentation', async function () {
+            const content = await readFile2String(resolve(__dirname,'../','test','fullComp.mjs'));
+            const component = getComponentFromFileContent('TransferMoney',content);
+            console.log(component);
         });
     });
 });

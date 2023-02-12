@@ -51,6 +51,7 @@ export const readComponentProps = fileContent => {
             .trim()
             .split(',')
             .filter(x => x !== '' && !!x)
+            .map(x=>x.trim())
         : [];
 }
 
@@ -63,19 +64,15 @@ const stateReducer = (acc, stateContent) => {
         .replace(/^\s*['"]+|['"]+$/gm, '')
         .trim();
     const _d = {
-        state: value,
-        setState: setValue,
-        initialValue: initialValue === ''
-            ? undefined
-            : isNaN(Number(initialValue))
-                ? initialValue
-                : Number(initialValue)
+        state: value.trim(),
+        setState: setValue.trim(),
+        initialValue: initialValue
     };
     return Array.isArray(acc) ? acc.concat([_d]) : [_d];
 }
 export const readComponentStates = fileContent => {
     const matched = `${fileContent}`
-        .match(/^\s*(const)\s*\[[a-zA-Z0-9,_\-\s]+\]\s*=\s*(useState)\s*\(\s*[}{0-9a-zA-Z\s:_\-'",]*\)/gm);
+        .match(/^\s*(const)\s*\[[a-zA-Z0-9,_\-\s]+\]\s*=\s*(useState)\s*\(\s*[\[\]}{0-9a-zA-Z\s:_\-'",]*\)/gm);
     return Array.isArray(matched) ? matched.reduce(stateReducer, []) : [];
 }
 
@@ -108,3 +105,12 @@ export const readComponentEffects = fileContent => {
     return effects;
 }
 
+export const getComponentFromFileContent = (name,content) => ({
+    name,
+    description: readComponentDescription(content),
+    props: readComponentProps(content),
+    states: readComponentStates(content),
+    effects: readComponentEffects(content),
+    body: readComponentBody(content),
+    dependencies: readComponentDependencies(content)
+})
