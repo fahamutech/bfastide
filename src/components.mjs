@@ -107,3 +107,4 @@ export const readComponentEffects = fileContent => {
     }
     return effects;
 }
+

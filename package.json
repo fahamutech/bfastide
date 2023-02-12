@@ -1,8 +1,8 @@
 {
-  "name": "functions",
-  "version": "1.0.0",
+  "name": "bfastide",
+  "version": "0.1.0",
   "scripts": {
-    "test": "echo \"no test\""
+    "test": "npx mocha ./src"
   },
   "dependencies": {},
   "devDependencies": {
