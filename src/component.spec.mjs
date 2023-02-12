@@ -1,10 +1,11 @@
 import {
     readComponentBody,
     readComponentDependencies,
-    readComponentDescription,
-    readComponentProps
+    readComponentDescription, readComponentEffects,
+    readComponentProps, readComponentStates
 } from "./components.mjs";
 import {expect} from "chai";
+import {createHash} from "node:crypto";
 
 const compactString = x => `${x}`.replace(/\s*/gm, '');
 
@@ -84,6 +85,7 @@ describe('ComponentFunctions', function () {
             import * as moment from 'momentjs';
             import {ScrollView,Compose,FlatList} from 'react-native';
             import {Button} from 'react-native';
+            import {OutlineButton} from 'file:my-path';
             export const customText = props => {
                 return (
                    <Text/>
@@ -101,6 +103,7 @@ describe('ComponentFunctions', function () {
                 {name: 'Compose', reference: 'react-native'},
                 {name: 'FlatList', reference: 'react-native'},
                 {name: 'Button', reference: 'react-native'},
+                {name: 'OutlineButton', reference: 'file:my-path'},
             ]);
         });
     });
@@ -112,7 +115,80 @@ describe('ComponentFunctions', function () {
                 )
             }`;
         it('should return a component props', function () {
-            expect(readComponentProps(componentContent)).eql(['name','style','onValue'])
+            expect(readComponentProps(componentContent)).eql(['name', 'style', 'onValue'])
+        });
+    });
+    describe('readComponentStates', function () {
+        it('should return component states', function () {
+            const componentContent = `
+            export function customText({name,style,onValue}){
+                const [name,setName]=useState('test');
+                const [
+                    pic,setPic
+                 ] = useState(7)
+                const [url,urlSet]=useState()
+                return (
+                   <Text/>
+                )
+            }`;
+            expect(readComponentStates(componentContent)).eql([
+                {state: 'name', setState: 'setName', initialValue: 'test'},
+                {state: 'pic', setState: 'setPic', initialValue: 7},
+                {state: 'url', setState: 'urlSet', initialValue: undefined},
+            ])
+        });
+    });
+    describe('readComponentEffects', function () {
+        it('should return component side effects ( useEffect ) ', function () {
+            const componentContent = `
+            export function customText({name,style,onValue}){
+                useEffect(()=>{},[
+                    user, key, home,route
+                ]);
+                useEffect(()=>{
+                    const useFull = 1;
+                    return function(){
+                        cleanUp([name,age]);
+                    }
+                },[]);
+                useEffect(()=>{
+                    return function(){
+                        cleanUp([name,age]);
+                    }
+                },[age])
+                return (
+                   <Text/>
+                )
+            }`;
+            expect(readComponentEffects(componentContent).reduce((a, b) => {
+                delete b?.body;
+                a.push(b);
+                return a;
+            }, [])).eql([
+                {
+                    hash: createHash('sha1').update(`useEffect(()=>{},[
+                        user, key, home,route
+                    ]);`.replace(/\s*/igm, '')).digest('hex'),
+                    dependencies: ['user', 'key', 'home', 'route']
+                },
+                {
+                    hash: createHash('sha1').update(`useEffect(()=>{
+                        const useFull = 1;
+                        return function(){
+                            cleanUp([name,age]);
+                        }
+                    },[]);`.replace(/\s*/igm, '')).digest('hex'),
+                    dependencies: []
+                },
+                {
+                    hash: createHash('sha1').update(`useEffect(()=>{
+                        return function(){
+                            cleanUp([name,age]);
+                        }
+                    },[age])`.replace(/\s*/igm, '')).digest('hex'),
+                    dependencies: ['age']
+                },
+            ])
         });
     });
 });

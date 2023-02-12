@@ -1,3 +1,5 @@
+import {createHash} from 'node:crypto';
+
 export const readComponentBody = fileContent => {
     const matched = `${fileContent}`.match(/((return)\s*\(\s*)(\s.+)*\s*\)/igm);
     const removeReturn = Array.isArray(matched) && matched.length > 0
@@ -50,4 +52,58 @@ export const readComponentProps = fileContent => {
             .split(',')
             .filter(x => x !== '' && !!x)
         : [];
+}
+
+const stateReducer = (acc, stateContent) => {
+    const [value, setValue] = `${stateContent}`
+        .replace(/^\s*(const)\s*\[|\][\s\S]+?[);]+/gm, '')
+        .trim().split(',');
+    const initialValue = `${stateContent}`
+        .replace(/^\s*(const)\s*\[[a-zA-Z0-9,_\-\s]+\]\s*=\s*(useState)\s*\(|[);]+/gm, '')
+        .replace(/^\s*['"]+|['"]+$/gm, '')
+        .trim();
+    const _d = {
+        state: value,
+        setState: setValue,
+        initialValue: initialValue === ''
+            ? undefined
+            : isNaN(Number(initialValue))
+                ? initialValue
+                : Number(initialValue)
+    };
+    return Array.isArray(acc) ? acc.concat([_d]) : [_d];
+}
+export const readComponentStates = fileContent => {
+    const matched = `${fileContent}`
+        .match(/^\s*(const)\s*\[[a-zA-Z0-9,_\-\s]+\]\s*=\s*(useState)\s*\(\s*[}{0-9a-zA-Z\s:_\-'",]*\)/gm);
+    return Array.isArray(matched) ? matched.reduce(stateReducer, []) : [];
+}
+
+const extractEffect = block => `${block}`.match(/^\s*(useEffect)\s*\([\s\S]+?(?=(useEffect)\s*\()/gm);
+export const readComponentEffects = fileContent => {
+    const matched = `${fileContent}`.match(/^\s*(useEffect)\s*\([\s\S]+(?=(return)\s*\()/gm);
+    let effectBlock = Array.isArray(matched) && matched.length > 0 ? `${matched[0].trim()} useEffect(()=>{},[])` : '';
+    const effects = [];
+    while (true) {
+        const extracted = extractEffect(effectBlock);
+        if (Array.isArray(extracted) && extracted.length > 0) {
+            const effect = extracted[0].trim();
+            const depMatches = `${effect}`.match(/\[\s*[a-zA-Z0-9_,\s\-]*\s*\](?=\s*\)\s*;*$)/g);
+            effects.push({
+                hash: createHash('sha1')
+                    .update(`${effect}`.replace(/\s+/igm, ''))
+                    .digest('hex'),
+                body: effect,
+                dependencies: Array.isArray(depMatches)
+                    ? depMatches[0]
+                        .replace(/[\[\]\s+]+/gm, '')
+                        .trim().split(',').filter(x => x !== '' && !!x)
+                    : []
+            });
+            effectBlock = effectBlock.replace(effect, '');
+        } else {
+            break;
+        }
+    }
+    return effects;
 }
