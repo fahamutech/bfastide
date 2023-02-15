@@ -55,7 +55,7 @@ export const readComponentDependencies = fileContent => {
 
 export const readComponentProps = fileContent => {
     const matchSignature = `${fileContent}`
-        .match(/^\s*(export)\s+(function)\s+[a-zA-Z0-9]+\s*\(\s*\{[\s\S]+?\}\s*\)?/igm);
+        .match(/^\s*(export)\s+(function)\s+[a-zA-Z0-9_]+\s*\(\s*\{[\s\S]+?\}\s*\)?/igm);
     return Array.isArray(matchSignature) && matchSignature.length > 0
         ? matchSignature[0]
             .replace(/^[\s\S]*\{|\s*\}\s*\)/igm, '')
