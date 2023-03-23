@@ -15,12 +15,14 @@ export const createComponent = async ({ project, module, name, description }) =>
     } catch (e) {
         await writeFile(componentPath, `
 /**
- * ${description}
+ * ${description??''}
  * /
 export function ${capitalizeFirstLetter(name)}(){
-    
-}    
-            `);
+    return (
+        <>
+        </>
+    );
+}`);
         return { message: 'Component created.' }
     }
 }

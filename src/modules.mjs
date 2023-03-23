@@ -28,9 +28,9 @@ export const getAllModules = async projectName => {
             }
         });
         const dirOny = await Promise.all(allP);
-        return dirOny.filter(x => !!x);
+        return dirOny.filter(x => !!x).map(y=>({name:y,path:resolve(path,'src',y)}));
     } catch (e) {
-        return { message: 'Fail to process modules in this project.' }
+        throw { message: 'Fail to process modules in this project.' }
     }
 }
 
