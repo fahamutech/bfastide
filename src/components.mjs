@@ -1,4 +1,30 @@
-import {createHash} from 'node:crypto';
+import { createHash } from 'node:crypto';
+import { mkdir, writeFile, stat } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { capitalizeFirstLetter, getProjectBasePath } from './index.mjs';
+import { readFile2String } from './fsUtils.mjs'
+
+export const createComponent = async ({ project, module, name, description }) => {
+    const path = getProjectBasePath(project);
+    const componentBasePatch = resolve(path, 'src', module, 'components');
+    const componentPath = resolve(componentBasePatch, `${capitalizeFirstLetter(name)}.js`);
+    await mkdir(componentBasePatch, { recursive: true });
+    try {
+        await stat(componentPath);
+        return { message: 'File already exist.' }
+    } catch (e) {
+        await writeFile(componentPath, `
+/**
+ * ${description}
+ * /
+export function ${capitalizeFirstLetter(name)}(){
+    
+}    
+            `);
+        return { message: 'Component created.' }
+    }
+}
+
 
 export const readComponentBody = fileContent => {
     const matched = `${fileContent}`.match(/((return)\s*\(\s*)(\s.+)*\s*\)/igm);
@@ -124,4 +150,11 @@ export const getComponentFromFileContent = (name, content) => ({
     effects: readComponentEffects(content),
     body: readComponentBody(content),
     dependencies: readComponentDependencies(content)
-})
+});
+
+export const readAComponent = async ({ project, module, name }) => {
+    const projectPath = getProjectBasePath(project);
+    const componentPath = resolve(projectPath, 'src', module, 'components', `${capitalizeFirstLetter(name)}.js`)
+    const content = await readFile2String(componentPath);
+    return getComponentFromFileContent(capitalizeFirstLetter(name), content);
+}
